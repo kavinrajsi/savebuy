@@ -1,0 +1,50 @@
+<div class='row'>
+	<div class='col-12 mb-3'>
+		{{#each rowstrans}}
+			{{#if @first}}
+				{{#if (chcount 12)}}{{else}}
+					<a
+						href='/account/{{this.groupnumber}}/payment'
+						class='btn btn-primary btn-sm'
+					><i class='bi bi-credit-card'></i>
+						Pay Now</a>
+				{{/if}}
+
+			{{/if}}
+		{{/each}}
+	</div>
+	<div class='col-12'>
+		<div class='table-responsive'>
+			<table class='table table-bordered table-hover'>
+				<thead class='table-light'>
+					<tr>
+						<th scope='col'>#</th>
+						<th scope='col'>Receipt No</th>
+						<th scope='col'>Group Number</th>
+						<th scope='col'>For Month</th>
+						<th scope='col'>Paid Type</th>
+						<th scope='col'>Term</th>
+						<th scope='col'>Date</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each rowstrans}}
+						<tr>
+							<td scope='row'>
+								{{numberInc @index}}
+							</td>
+							<td>{{this.receiptno}}</td>
+							<td>{{this.groupnumber}}</td>
+							<td>{{this.formonth}}</td>
+							<td data-mode='{{this.cashier}}'>{{this.paidtype}}</td>
+							<td>{{this.term}}</td>
+							<td>
+								{{dataFormate this.receiptdate 'long'}}
+							</td>
+						</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

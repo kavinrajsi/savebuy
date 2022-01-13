@@ -1,0 +1,27 @@
+<div class="container">
+  <div class="row">
+    {{#each o}}
+      <div class="col-12 col-sm-4 col-lg-3">
+        <div class="card mb-3">
+            <div class="card-body">
+          <a href="/account/{{this.groupno}}" class="text-decoration-none text-dark">
+              <div class="">
+                <h5 class="card-title">{{dataFormate this.joindate "year"}}</h5>
+              </div>
+              <h6 class="card-subtitle mb-2 text-muted">{{this.groupno}} / {{this.customercod}} </h6>
+              <h6 class="card-subtitle mb-2 text-muted">{{this.customername}} </h6>
+              <p class="card-text">Join Date : {{dataFormate this.joindate "long"}}</p>
+          </a>
+            </div>
+            <div class="card-footer">
+              {{#if this.tenure}}
+                  <a href="/account/{{this.groupno}}/payment" class="btn btn-primary btn-sm"><i class="bi bi-credit-card"></i> Pay Now</a>
+              {{else}}
+                  <a href="/account/{{this.groupno}}" class="btn btn-info btn-sm"><i class="bi bi-credit-card"></i> Completed</a>
+              {{/if }}
+            </div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+</div>

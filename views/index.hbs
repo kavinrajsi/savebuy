@@ -1,0 +1,38 @@
+<section class="form-signin">
+  {{#if message}}
+    <div class="alert {{messageClass}}" role="alert">
+      {{message}}
+    </div>
+  {{/if}}
+
+  <form action="/authentication" method="post">
+    <h1 class="h3 mb-3 fw-normal text-center">Please sign in</h1>
+
+    <div class="form-floating">
+      <input
+        type="text"
+        required
+        name="username"
+        class="form-control"
+        id="floatingInput"
+        value="A023822"
+        placeholder="CustomerID"
+      />
+      <label class="" for="floatingInput">Customer ID</label>
+    </div>
+    <div class="form-floating">
+      <input
+        type="tel"
+        required
+        name="password"
+        class="form-control"
+        id="floatingPassword"
+        value="9444084452"
+        placeholder="Mobile Number"
+      />
+      <label class="" for="floatingPassword">Mobile Number</label>
+    </div>
+    <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+    <p class="mt-5 text-muted text-center">&copy; 2017–2021 Sundari Silks</p>
+  </form>
+</section>

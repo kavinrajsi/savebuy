@@ -1,0 +1,21 @@
+
+      {{url}}
+    <form id="frm1" action="{{url}}" name="frm1" method="post">
+      <p>Please wait.......</p>
+      <script type="text/javascript">
+        window.onload = function(){
+         document.forms['frm1'].submit();
+        }
+        const json= `{{{adasd}}}`;
+        const str = JSON.parse(json);
+        console.log(str);
+        var postData = JSON.parse(json);
+        for(var key in postData){
+        var input = document.createElement('input');
+        input.setAttribute('type', 'text');
+        input.setAttribute('value', postData[key]);
+        input.setAttribute('name', key);
+        document.getElementById("frm1").appendChild(input);
+        }
+      </script>
+    </form>

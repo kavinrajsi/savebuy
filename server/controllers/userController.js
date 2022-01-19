@@ -108,7 +108,7 @@ exports.userDetail = (req, res) => {
 				});
 			}
 			connection.destroy();
-			console.log(err);
+
 			console.log(rows);
 			// console.log(fields);
 			console.log(sql1);
@@ -353,7 +353,6 @@ exports.getCustomerTransaction = (req, res) => {
 
 // insert customer data
 exports.insertCustomer = (req, res) => {
-	// console.log(req.body);
 	const post = {
 		customerid: req.body.customerid,
 		headname: req.body.headname,
@@ -361,91 +360,73 @@ exports.insertCustomer = (req, res) => {
 		location: req.body.location,
 	};
 	// let sql = `INSERT IGNORE INTO customer SET ?`;
-	let sql = `SELECT * FROM customer WHERE customerid = '${req.body.customerid}' AND headname = '${req.body.headname}' AND mobilenumber = '${req.body.mobilenumber}' `;
+	let sql = `SELECT * FROM customer WHERE customerid = '${req.body.customerid}' `;
 	let query = pool.query(sql, post, (err, result, fields) => {
-		if (err) {
-			console.log(err);
-			res.json(err);
+		if (result.length == 0) {
+			let sqls = `INSERT INTO customer SET ?`;
+			let querys = pool.query(sqls, post, (errs, results) => {
+				if (errs) throw errs;
+				let data = {
+					recordid: results.insertId,
+					recordadd: results.affectedRows,
+					recordstatus: results.serverStatus,
+				};
+				res.end(JSON.stringify(data));
+			});
 		} else {
-			console.log(result.length);
-			if (result.length == 0) {
-				let sqls = `INSERT IGNORE INTO customer SET ?`;
-				let querys = pool.query(sqls, post, (errs, results) => {
-					if (err) throw err;
-					let data = {
-						recordid: results.insertId,
-						recordadd: results.affectedRows,
-						recordstatus: results.serverStatus,
-					};
-					res.end(JSON.stringify(data));
-				});
-			} else {
-				res.end(
-					'We already have ' + result.length + ' number of record in the system'
-				);
-			}
+			let sqls = ` UPDATE customer SET headname = '${req.body.headname}', mobilenumber = '${req.body.mobilenumber}' WHERE customerid = '${req.body.customerid}' `;
+			let querys = pool.query(sqls, post, (errs, results) => {
+				if (errs) throw errs;
+				let data = {
+					recordid: results.insertId,
+					recordadd: results.affectedRows,
+					recordstatus: results.serverStatus,
+				};
+				res.end(JSON.stringify(data));
+			});
 		}
 		connection.destroy();
 	});
 };
 
-// insert customer master
+// insert customer group
 exports.insertCustomerGroup = (req, res) => {
-	console.log(typeof req.body.commitdate);
-	let checkNull = '';
-	if (req.body.commitdate == '') {
-		checkNull = null;
-	}
 	const post = {
 		customercode: req.body.customercode,
 		groupno: req.body.groupno,
 		customername: req.body.customername,
 		joindate: req.body.joindate,
 		status: req.body.status,
-		commitdate: checkNull,
+		commitdate: req.body.commitdate,
 	};
-
 	// let sql = `INSERT IGNORE INTO customer_group SET ?`;
-	let sql = `SELECT * FROM customer_group WHERE customercode = '${req.body.customercode}' AND groupno = '${req.body.groupno}' AND customername = '${req.body.customername}' AND joindate = '${req.body.joindate}'`;
-	let query = pool.query(sql, post, (err, result, fields) => {
-		if (err) {
-			console.log(err);
-			res.json(err);
+	let sql = `SELECT * FROM customer_group WHERE customercode = '${post.customercode}' AND groupno = '${post.groupno}'`;
+	let query = pool.query(sql, post, (err, result) => {
+		if (result.length == 0) {
+			let sqls = `INSERT IGNORE INTO customer_group (customercode, groupno, customername, joindate, status, commitdate) VALUES ('${post.customercode}', '${post.groupno}', '${post.customername}', '${post.joindate}', '${post.status}', IF('${post.commitdate}' = '', NULL, '${post.commitdate}') )`;
+			let querys = pool.query(sqls, post, (errs, results) => {
+				if (errs) throw errs;
+				let data = {
+					recordid: results.insertId,
+					recordadd: results.affectedRows,
+					recordstatus: results.serverStatus,
+				};
+				res.end(JSON.stringify(data));
+			});
 		} else {
-			console.log(result.length);
-			if (result.length == 0) {
-				let sqls = `INSERT IGNORE INTO customer_group SET ?`;
-				let querys = pool.query(sqls, post, (errs, results) => {
-					if (err) throw err;
-					let data = {
-						recordid: results.insertId,
-						recordadd: results.affectedRows,
-						recordstatus: results.serverStatus,
-					};
-					res.end(JSON.stringify(data));
-				});
-			} else {
-				res.end(
-					'We already have ' + result.length + ' number of record in the system'
-				);
-			}
+			let sqls = ` UPDATE customer_group SET customername = '${post.customername}', status = '${post.status}', commitdate = IF('${post.commitdate}' = '', NULL, '${post.commitdate}') WHERE customercode = '${post.customercode}' `;
+			let querys = pool.query(sqls, post, (errs, results) => {
+				if (errs) throw errs;
+				let data = {
+					recordid: results.insertId,
+					recordadd: results.affectedRows,
+					recordstatus: results.serverStatus,
+				};
+				res.end(JSON.stringify(data));
+			});
 		}
 		connection.destroy();
 	});
-	// let query = pool.query(sql, post, (err, result, fields) => {
-	// 	if (err) {
-	// 		// If an error occurred, send a generic server failure
-	// 		// console.log(`not successful! ${err}`);
-	// 		// res.render('404', {
-	// 		// 	err,
-	// 		// });
-	// 		res.json(err);
-	// 	} else {
-	// 		// console.log(result);
-	// 		res.end(JSON.stringify(result));
-	// 	}
-	// 	connection.destroy();
-	// });
 };
 
 // insert customer transaction
@@ -459,20 +440,28 @@ exports.insertCustomerTransaction = (req, res) => {
 		cashier: req.body.cashier,
 		term: req.body.term,
 	};
-	console.log(post);
-
-	let sql = `INSERT IGNORE INTO customer_transaction SET ?`;
+	// let sql = `INSERT IGNORE INTO customer_transaction SET ?`;
+	let sql = `SELECT * FROM customer_transaction WHERE receiptnumber = '${req.body.receiptnumber}' AND groupnumber = '${req.body.groupnumber}' AND receiptdate = '${req.body.receiptdate}' AND cashier = '${req.body.cashier}'`;
 	let query = pool.query(sql, post, (err, result, fields) => {
 		if (err) {
-			// If an error occurred, send a generic server failure
-			// console.log(`not successful! ${err}`);
-			// res.render('404', {
-			// 	err,
-			// });
 			res.json(err);
 		} else {
-			// console.log(result);
-			res.end(JSON.stringify(result));
+			if (result.length == 0) {
+				let sqls = `INSERT IGNORE INTO customer_transaction SET ?`;
+				let querys = pool.query(sqls, post, (errs, results) => {
+					if (err) throw err;
+					let data = {
+						recordid: results.insertId,
+						recordadd: results.affectedRows,
+						recordstatus: results.serverStatus,
+					};
+					res.end(JSON.stringify(data));
+				});
+			} else {
+				res.end(
+					'We already have ' + result.length + ' number of record in the system'
+				);
+			}
 		}
 		connection.destroy();
 	});

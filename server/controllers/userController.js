@@ -40,7 +40,7 @@ exports.loginAuth = (req, res) => {
 	let password = req.body.password;
 	if (username && password) {
 		let sql = `SELECT * FROM customer WHERE customerid = ? AND mobilenumber = ?`;
-		pool.query(sql, [username, password], function (err, rows, fields) {
+		pool.query(sql, [username, password], function (err, rows) {
 			if (err) {
 				// If an error occurred, send a generic server failure
 				console.log(`not successful! ${err}`);
@@ -57,7 +57,13 @@ exports.loginAuth = (req, res) => {
 				res.redirect('/account');
 				connection.destroy();
 			} else {
-				res.redirect('/login');
+				let message = '';
+				if (err !== ' ') {
+					message = 'Username and password is not matching';
+				}
+				res.render('index', {
+					message: message,
+				});
 			}
 		});
 	} else {
@@ -70,12 +76,14 @@ exports.userDetail = (req, res) => {
 	if (req.session.loggedin) {
 		let userchitGroups = {};
 		let userchitGroup = {};
+		let paynow;
+		let closed;
+		let adjusted;
 
 		var o = {}; // empty Object
 		o = []; // empty Array, which you can push() values into
 
 		let userName = req.session.name;
-		console.log(userName);
 		let sql1 = `SELECT *  FROM customer_group WHERE customercode = ? ORDER BY joindate DESC`;
 		pool.query(sql1, [userName], function (err, rows, fields) {
 			if (err) throw err;
@@ -90,6 +98,23 @@ exports.userDetail = (req, res) => {
 					} else {
 						userchitGroup = true;
 					}
+					if (element.status == 'N') {
+						paynow = true;
+						closed = false;
+						adjusted = false;
+					} else if (element.status == 'A') {
+						paynow = false;
+						closed = false;
+						adjusted = true;
+					} else if (element.status == 'C') {
+						paynow = false;
+						closed = true;
+						adjusted = false;
+					} else {
+						paynow = false;
+						closed = false;
+						adjusted = false;
+					}
 
 					let data = {
 						customercod: element.customercod,
@@ -98,6 +123,9 @@ exports.userDetail = (req, res) => {
 						joindate: element.joindate,
 						commitdate: element.commitdate,
 						tenure: userchitGroup,
+						paynow: paynow,
+						closed: closed,
+						adjusted: adjusted,
 					};
 					o.push(data);
 				});
@@ -106,12 +134,10 @@ exports.userDetail = (req, res) => {
 					o,
 					loggedin,
 				});
+			} else {
+				console.log('user detail else');
 			}
 			connection.destroy();
-
-			console.log(rows);
-			// console.log(fields);
-			console.log(sql1);
 		});
 	} else {
 		res.redirect('/login');
@@ -442,7 +468,7 @@ exports.insertCustomerTransaction = (req, res) => {
 	};
 	// let sql = `INSERT IGNORE INTO customer_transaction SET ?`;
 	let sql = `SELECT * FROM customer_transaction WHERE receiptnumber = '${req.body.receiptnumber}' AND groupnumber = '${req.body.groupnumber}' AND receiptdate = '${req.body.receiptdate}' AND cashier = '${req.body.cashier}'`;
-	let query = pool.query(sql, post, (err, result, fields) => {
+	let query = pool.query(sql, post, (err, result) => {
 		if (err) {
 			res.json(err);
 		} else {

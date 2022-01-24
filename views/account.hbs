@@ -14,10 +14,14 @@
           </a>
             </div>
             <div class="card-footer">
-              {{#if this.tenure}}
+              {{#if this.paynow}}
                   <a href="/account/{{this.groupno}}/payment" class="btn btn-primary btn-sm"><i class="bi bi-credit-card"></i> Pay Now</a>
-              {{else}}
-                  <a href="/account/{{this.groupno}}" class="btn btn-info btn-sm"><i class="bi bi-credit-card"></i> Completed</a>
+              {{/if }}
+               {{#if this.closed}}
+                  <a href="/account/{{this.groupno}}" class="btn btn-info btn-sm"><i class="bi bi-credit-card"></i> Closed</a>
+              {{/if }}
+               {{#if this.adjusted}}
+                  <a href="/account/{{this.groupno}}" class="btn btn-info btn-sm"><i class="bi bi-credit-card"></i> Adjusted</a>
               {{/if }}
             </div>
         </div>

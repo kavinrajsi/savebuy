@@ -11,8 +11,9 @@ router.get('/account', userController.userDetail);
 router.get('/account/:id', userController.userTransaction);
 router.get('/account/:id/payment', userController.userPayment);
 router.post('/paymentRequest', userController.paymentRequest);
-router.get('/response', userController.paymentResponse);
-router.get('/success', userController.success);
+router.post('/process', userController.response);
+router.post('/success', userController.responseInsert);
+
 router.post('/customer-data',	userController.insertCustomer);
 router.post('/customer-group-data', userController.insertCustomerGroup);
 router.post('/customer-transaction-data', userController.insertCustomerTransaction);

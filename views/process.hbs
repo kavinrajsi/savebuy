@@ -1,0 +1,65 @@
+<p>Please wait.......</p>
+ <h1 align="center">PG Response</h1>
+    <div class="container">
+      <div class="panel" id="panel">
+        <div class="panel-heading" id="heading"></div>
+        <div class="panel-body">
+          <table class="table table-hover">
+            <tbody id="tablebody">
+              <tr>
+                <td>Order ID</td>
+                <td id="orderId"></td>
+              </tr>
+              <tr>
+                <td>Order Amount</td>
+                <td id="orderAmount"></td>
+              </tr>
+              <tr>
+                <td>Reference ID</td>
+                <td id="referenceId"></td>
+              </tr>
+              <tr>
+                <td>Transaction Status</td>
+                <td id="txStatus"></td>
+              </tr>
+              <tr>
+                <td>Payment Mode </td>
+                <td id="paymentMode"></td>
+              </tr>
+              <tr>
+                <td>Message</td>
+                <td id="txMsg"></td>
+              </tr>
+              <tr>
+                <td>Transaction Time</td>
+                <td id="txTime"></td>
+              </tr>
+              <script type="text/javascript">
+			let json= `{{{adasd}}}`;
+		let postData = JSON.parse(json);
+    let dataURL = '';
+		console.log(json);
+		console.log(postData);
+                if(postData.signature==postData.computedsignature){
+                document.getElementById("panel").className += " panel-success";
+                document.getElementById("heading").innerHTML = "Signature Verification Successful";
+                }else{
+                document.getElementById("panel").className += " panel-danger";
+                document.getElementById("heading").innerHTML = "Signature Verification Failed";
+                }
+                for(var key in postData){
+                document.getElementById(key).innerHTML = postData[key];
+                }
+                if(postData.txStatus == 'SUCCESS'){
+                  // dataURL = '';
+                  window.location.replace("https://www.sundarisilksindia.in/success");
+                }else{
+                  // dataURL = '';
+                  window.location.replace("https://www.sundarisilksindia.in/failed");
+                }
+              </script>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>

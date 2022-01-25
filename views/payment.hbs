@@ -3,8 +3,8 @@
     {{#each o}}
       <form id="redirectForm" method="post" action="/paymentRequest">
         <div class="card mb-3">
-          <div class="card-header">
-            <div class="form-group">
+          <div class="card-header d-none">
+            <div class="form-group ">
               <label>App ID:</label><br />
               {{!-- <input type="text" name="appId" value="1261639797dbdafd67a49efd1e361621" class="live form-control" /> --}}
               <input type="text" name="appId" value="79490d552361c019c4ee021cf09497" class="test form-control" />
@@ -41,7 +41,7 @@
               <label>Return URL:</label><br />
               <input
                 name="returnUrl"
-                value="https://www.sundarisilksindia.in/success"
+                value="https://www.sundarisilksindia.in/process"
                 placeholder="Enter the URL to which customer will be redirected (Ex. www.example.com)"
                 class="form-control"
               />
@@ -50,7 +50,7 @@
               <label>Notify URL:</label><br />
               <input
                 name="notifyUrl"
-                value="https://www.sundarisilksindia.in/response"
+                value="https://www.sundarisilksindia.in/process"
                 placeholder="Enter the URL to get server notificaitons (Ex. www.example.com)"
                 class="form-control"
               />
@@ -64,12 +64,12 @@
               </h5>
             </div>
             <h6 class="card-subtitle mb-2 text-muted">
-              <span>Order for Month :</span>
-              <span>{{this.ordermonth}}</span>
-            </h6>
-            <h6 class="card-subtitle mb-2 text-muted">
               <span>Order Amount :</span>
               <span>{{this.orderamount}}</span>
+            </h6>
+            <h6 class="card-subtitle mb-2 text-muted">
+              <span>Order on Date :</span>
+              <span>{{this.newDate}}</span>
             </h6>
           </div>
 

@@ -1,18 +1,4 @@
 <div class='row'>
-	<div class='col-12 mb-3'>
-		{{#each rowstrans}}
-			{{#if @first}}
-				{{#if (chcount 12)}}{{else}}
-					<a
-						href='/account/{{this.groupnumber}}/payment'
-						class='btn btn-primary btn-sm'
-					><i class='bi bi-credit-card'></i>
-						Pay Now</a>
-				{{/if}}
-
-			{{/if}}
-		{{/each}}
-	</div>
 	<div class='col-12'>
 		<div class='table-responsive'>
 			<table class='table table-bordered table-hover'>
@@ -33,7 +19,7 @@
 							<td scope='row'>
 								{{numberInc @index}}
 							</td>
-							<td>{{this.receiptno}}</td>
+							<td>{{this.receiptnumber}}</td>
 							<td>{{this.groupnumber}}</td>
 							<td>{{this.formonth}}</td>
 							<td data-mode='{{this.cashier}}'>{{this.paidtype}}</td>

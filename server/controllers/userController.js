@@ -9,6 +9,8 @@ const fs = require('fs');
 const mysql = require('mysql2');
 const { post } = require('../routes/users');
 const { equal } = require('assert');
+const e = require('express');
+const { text } = require('body-parser');
 
 const pool = mysql.createPool({
 	host: 'dbaas-db-8004689-do-user-10483948-0.b.db.ondigitalocean.com',
@@ -33,14 +35,20 @@ exports.faq = (req, res) => {
 	res.render('faq');
 };
 
-let loggedin = false;
+let loggedStatus = false;
+let customerSessionid = '';
+let customerName = '';
+let customerId = '';
+let customerNumber = '';
+let message = '';
+
 // login as per the User
 exports.loginAuth = (req, res) => {
-	let username = req.body.username;
-	let password = req.body.password;
-	if (username && password) {
+	customerId = req.body.username;
+	customerNumber = req.body.password;
+	if (customerId && customerNumber) {
 		let sql = `SELECT * FROM customer WHERE customerid = ? AND mobilenumber = ?`;
-		pool.query(sql, [username, password], function (err, rows) {
+		pool.query(sql, [customerId, customerNumber], function (err, rows) {
 			if (err) {
 				// If an error occurred, send a generic server failure
 				console.log(`not successful! ${err}`);
@@ -51,13 +59,12 @@ exports.loginAuth = (req, res) => {
 				connection.destroy();
 			}
 			if (rows.length > 0) {
-				req.session.loggedin = true;
-				req.session.name = username;
-				loggedin = true;
+				req.session.loggedStatus = true;
+				req.session.customerId = rows[0].customerid;
+				req.session.customerName = rows[0].headname;
 				res.redirect('/account');
 				connection.destroy();
 			} else {
-				let message = '';
 				if (err !== ' ') {
 					message = 'Username and password is not matching';
 				}
@@ -67,37 +74,28 @@ exports.loginAuth = (req, res) => {
 			}
 		});
 	} else {
-		res.send('Please enter Username and Password!');
+		message = 'Username and password is not matching';
+		res.render('index', {
+			message: message,
+		});
 	}
 };
 
 // View user group as per the User
 exports.userDetail = (req, res) => {
-	if (req.session.loggedin) {
-		let userchitGroups = {};
-		let userchitGroup = {};
+	if (req.session.id) {
 		let paynow;
 		let closed;
 		let adjusted;
 
-		var o = {}; // empty Object
-		o = []; // empty Array, which you can push() values into
+		var customerGroupdata = {}; // empty Object
+		customerGroupdata = []; // empty Array, which you can push() values into
 
-		let userName = req.session.name;
-		let sql1 = `SELECT *  FROM customer_group WHERE customercode = ? ORDER BY joindate DESC`;
-		pool.query(sql1, [userName], function (err, rows, fields) {
+		let sql = `SELECT *  FROM customer_group WHERE customercode = ? ORDER BY joindate DESC`;
+		pool.query(sql, [req.session.customerId], function (err, rows, fields) {
 			if (err) throw err;
 			if (rows.length > 0) {
 				rows.forEach(function (element) {
-					let todaysDate = new Date();
-					let date2 = element.joindate;
-					let DifferenceIntime = todaysDate.getTime() - date2.getTime();
-					let DifferenceIntdays = DifferenceIntime / (1000 * 3600 * 24);
-					if (DifferenceIntdays >= 180) {
-						userchitGroup = false;
-					} else {
-						userchitGroup = true;
-					}
 					if (element.status == 'N') {
 						paynow = true;
 						closed = false;
@@ -117,46 +115,83 @@ exports.userDetail = (req, res) => {
 					}
 
 					let data = {
-						customercod: element.customercod,
+						customercod: element.customercode,
 						groupno: element.groupno,
 						customername: element.customername,
 						joindate: element.joindate,
 						commitdate: element.commitdate,
-						tenure: userchitGroup,
 						paynow: paynow,
 						closed: closed,
 						adjusted: adjusted,
 					};
-					o.push(data);
+					customerGroupdata.push(data);
 				});
-				// console.log(o);
+				console.log(customerGroupdata);
 				res.render('account', {
-					o,
-					loggedin,
+					customerGroupdata,
+					loggedStatus,
 				});
 			} else {
-				console.log('user detail else');
+				message = 'Sorry, customer group no is not in online system';
+				res.render('index', {
+					message: message,
+				});
 			}
 			connection.destroy();
 		});
 	} else {
-		res.redirect('/login');
+		message = 'Kindly check with cookie and session';
+		res.render('index', {
+			message: message,
+		});
 	}
 };
 
 // View user transaction as per the group
 exports.userTransaction = (req, res) => {
-	let sql2 = `SELECT *  FROM customer_transaction WHERE groupnumber = ? ORDER BY receiptdate DESC `;
-	pool.query(sql2, [req.params.id], function (err, rowstrans, fields) {
-		if (err) throw err;
-		if (rowstrans.length > 0) {
-			res.render('view-transaction', {
-				rowstrans,
-				loggedin,
-			});
-		}
+	let checme = [];
+	if (req.session.loggedStatus) {
+		let sql1 = `SELECT *  FROM customer_group WHERE customercode = ? ORDER BY joindate DESC`;
+		pool.query(sql1, [req.session.customerId], function (err, rows, fields) {
+			if (err) throw err;
+			console.log(rows.length);
+			if (rows.length > 0) {
+				rows.forEach(function (element) {
+					checme.push(element.groupno);
+				});
+				console.log(checme);
+
+				let sql2 = `SELECT *  FROM customer_transaction WHERE groupnumber = ? ORDER BY receiptdate DESC `;
+				if (checme.includes(req.params.id)) {
+					pool.query(sql2, [req.params.id], function (err, rowstrans, fields) {
+						if (err) throw err;
+						if (rowstrans.length > 0) {
+							res.render('view-transaction', {
+								rowstrans,
+								loggedStatus,
+							});
+						}
+					});
+				} else {
+					message = 'Kindly check your group number';
+					res.render('index', {
+						message: message,
+					});
+				}
+			} else {
+				message = 'Sorry, customer group no is not in online system';
+				res.render('index', {
+					message: message,
+				});
+			}
+		});
 		connection.destroy();
-	});
+	} else {
+		message = 'Error with Session, Kindly login again';
+		res.render('index', {
+			message: message,
+		});
+	}
 };
 
 //pre payment page
@@ -168,28 +203,43 @@ exports.userPayment = (req, res) => {
 		// TODO: need to add order amount
 		let ordernote = '';
 		let newterm = '';
+		let newDate = '';
 		let newmonth = '';
 		let userName = '';
 		let amount = '';
-		if (!req.session.name) {
+		if (!req.session.customerName) {
 			userName = 'sundarisilks';
 		} else {
-			userName = req.session.name;
+			userName = req.session.customerName;
 		}
 		let customeremail = 'kavinrajsi01@gmail.com';
 		// TODO: need to load from customer table
-		let customerPhone = '9442663215';
+		let customerPhone = customerNumber;
 
 		if (rowstrans.length > 0) {
 			newterm = rowstrans[0].term;
 			newterm++;
+			// moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
 
-			newmonth = moment(rowstrans[0].receiptdate).format('MM');
-			newmonth++;
-
-			amount = '1000';
-
+			newmonth = moment().format('MM');
+			newDate = moment().format('DD - MM - YYYY');
+			console.log(newmonth);
+			console.log(newDate);
 			ordernote = req.params.id;
+
+			if (ordernote.match(/CC/)) {
+				amount = '300';
+			} else if (ordernote.match(/CD/)) {
+				amount = '500';
+			} else if (ordernote.match(/CE/)) {
+				amount = '1000';
+			} else if (ordernote.match(/MD/)) {
+				amount = '500';
+			} else if (ordernote.match(/ME/)) {
+				amount = '1000';
+			} else {
+				amount = '1000';
+			}
 
 			var o = {};
 			o = [];
@@ -202,19 +252,21 @@ exports.userPayment = (req, res) => {
 				customerphone: customerPhone,
 				ordermonth: newmonth,
 				orderterm: newterm,
+				newDate: newDate,
 				orderamount: amount,
 			};
 
 			o.push(data);
 			res.render('payment', {
 				o,
-				loggedin,
+				loggedStatus,
 			});
 		}
 		connection.destroy();
 	});
 };
 
+// send the payment data to payment gateway
 exports.paymentRequest = (req, res) => {
 	// console.log(req.body);
 	var postData = {
@@ -253,7 +305,7 @@ exports.paymentRequest = (req, res) => {
 	let adasd = JSON.stringify(postData);
 	console.log(JSON.stringify(postData));
 	// console.log(postData);
-	console.log(res.statusCode);
+	console.log(' before send 200: ' + res.statusCode);
 	res.render('request', {
 		adasd,
 		url: url,
@@ -263,8 +315,8 @@ exports.paymentRequest = (req, res) => {
 };
 
 // response
-exports.paymentResponse = (req, res) => {
-	console.log('paymentResponse');
+exports.response = (req, res) => {
+	console.log('page from rasorpay');
 	console.log(res.statusCode);
 	var postData = {
 		orderId: req.body.ordernote,
@@ -287,78 +339,51 @@ exports.paymentResponse = (req, res) => {
 		.digest('base64');
 	postData['signature'] = req.body.signature;
 	postData['computedsignature'] = computedsignature;
-
-	console.log('strring : ' + JSON.stringify(postData));
-	console.log('signdata : ' + signatureData);
-	res.json(postData);
-
-	let sql2 = `INSERT INTO customer_transaction  SET receiptnumber = ?, groupnumber = ?, receiptdate = ?, formonth = ?, paidtype = ?, cashier = ?, term = ?`;
-	console.log(sql2);
-
-	pool.query(
-		sql2,
-		[
-			req.body.referenceId,
-			req.body.orderId,
-			req.body.txTime,
-			13,
-			req.body.paymentMode,
-			00,
-			13,
-		],
-		function (err, rowstrans, fields) {
-			console.log('err : ' + err);
-			console.log('rowstrans : ' + rowstrans);
-			if (err) throw err;
-			if (rowstrans.length > 0) {
-				console.log('postaData : ' + postData);
-				console.log('postaDataString : ' + JSON.stringify(postData));
-				res.render('success');
-			}
-			connection.destroy();
-		}
-	);
+	let adasd = JSON.stringify(postData);
+	console.log('response adasd: ' + adasd);
+	console.log('session : ' + res.session);
+	console.log('customerName : ' + customerName);
+	res.render('process', {
+		adasd,
+	});
 };
 
-// response
-exports.success = (req, res) => {
-	console.log('success');
-	console.log(res.statusCode);
-	var postData = {
-		orderId: req.body.ordernote,
-		orderAmount: req.body.orderAmount,
-		referenceId: req.body.referenceId,
-		txStatus: req.body.txStatus,
-		paymentMode: req.body.paymentMode,
-		txMsg: req.body.txMsg,
-		txTime: req.body.txTime,
-	};
-	// secretKey = "be9ce1303c0e07b8fc0f39dc963c49ac779ceb3e",
-	var secretKey = 'af864ab7e6febcc08f797f103d3adb79707fd9b7',
-		signatureData = '';
-	for (var key in postData) {
-		signatureData += postData[key];
-	}
-	var computedsignature = crypto
-		.createHmac('sha256', secretKey)
-		.update(signatureData)
-		.digest('base64');
-	postData['signature'] = req.body.signature;
-	postData['computedsignature'] = computedsignature;
-
-	console.log('strring : ' + JSON.stringify(postData));
-	console.log('signdata : ' + signatureData);
-	res.json(postData);
-	// res.render('success', {
-	// 	});
+// success
+exports.responseInsert = (req, res) => {
+	console.log('page 1+');
+	console.log('postData: ' + req.postData);
+	console.log(req.session);
+	console.log(req.session.customerId);
+	console.log(req.session.customerName);
+	let passMEgroupNo = '';
+	let adasd = req.session;
+	res.render('status', {
+		adasd,
+	});
+	// let sql1 = `SELECT * FROM WHERE  customername = '${req.session.customerName}' ORDER BY created_at DESC`;
+	// let query = pool.query(sql1, (err, result, fields) => {
+	// 	if (err) {
+	// 		// If an error occurred, send a generic server failure
+	// 		console.log(`not successful! ${err}`);
+	// 		res.render('404', {
+	// 			err,
+	// 		});
+	// 		//destroy the connection thread
+	// 	} else {
+	// 		console.log(result[0].groupno);
+	// 		let passMEgroupNo = result[0].groupno;
+	// 		console.log('passMEgroupNo: ' + passMEgroupNo);
+	// 		res.json(result);
+	// 		//destroy the connection thread
+	// 	}
+	// 	connection.destroy();
+	// });
 };
 
 // Get customer transaction data
 exports.getCustomerTransaction = (req, res) => {
 	let sql = `SELECT * FROM customer_transaction WHERE receiptdate = '${req.body.date}T00:00:00.000Z' AND cashier = '0' ORDER BY id DESC`;
-	console.log(sql);
 	let query = pool.query(sql, (err, result, fields) => {
-		console.log(result);
 		if (err) {
 			// If an error occurred, send a generic server failure
 			// console.log(`not successful! ${err}`);
@@ -492,20 +517,6 @@ exports.insertCustomerTransaction = (req, res) => {
 		connection.destroy();
 	});
 };
-
-// models.Post.create(post)
-// 	.then((result) => {
-// 		res.status(201).json({
-// 			message: 'Customer inserted success',
-// 			post: result,
-// 		});
-// 	})
-// 	.catch((error) => {
-// 		res.status(500).json({
-// 			message: 'Something wrong',
-// 			error: error,
-// 		});
-// 	});
 
 // logout
 exports.userLogout = (req, res) => {
